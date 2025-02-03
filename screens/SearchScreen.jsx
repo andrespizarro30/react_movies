@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View,Dimensions,Platform, SafeAreaView, TextInput, TouchableOpacity, ScrollView, TouchableWithoutFeedback, Image } from 'react-native'
-import React, {useState} from 'react'
+import React, {useCallback, useState} from 'react'
 import { useNavigation } from '@react-navigation/native'; 
 import { XMarkIcon } from 'react-native-heroicons/outline';
 import Loading from '../components/Loading';
+import { fetchSearchMovies } from '../api/moviedb';
+import { IMAGE342 } from '../constants';
+import debounce from 'lodash/debounce';
 
 const ios = Platform.OS == 'ios';
 const verticalMargin = ios ? '' : 'my-3';
@@ -13,21 +16,37 @@ const { width, height } = Dimensions.get("window");
 
 const SearchScreen = () => {
 
-  const [searchText, setSearchText] = useState('');
   let [results,setResults] = useState([]);
 
   const [loading, setLoading] = useState(false)
 
   const changeTextHandler=(searchText)=>{
-    setSearchText(searchText)
-    results=[];
-    for (let i = 0; i < searchText.length; i++) {
-        results.push(searchText.length)
-    }
-    setResults(results)
+    if(searchText && searchText.length>2){
+        setLoading(true);
+        searchMovieByName(searchText);
+    }else{
+        setLoading(false);
+        setResults([]);
+    }   
   }
+    
+    const searchMovieByName = async (searchText)=>{
 
-  let movieName = "Ant-Man and the Wasp: Quantumania";
+        console.log(searchText);
+
+        fetchSearchMovies({
+            query: searchText,
+            include_adult:'false',
+            language:'en-US',
+            page:'1'
+        }).then(data=>{
+            setLoading(false);
+            data && setResults(data.results);
+        })
+        
+    }
+
+  const handleTextDebounce = useCallback(debounce(changeTextHandler,400),[]);
 
   const navigation = useNavigation();
 
@@ -35,14 +54,13 @@ const SearchScreen = () => {
     <SafeAreaView className="bg-neutral-800 flex-1">
         <View className={`mx-4 mb-3 flex-row justify-between items-center border border-neutral-500 rounded-full ${topMargin}`}>
             <TextInput
-                value={searchText}
                 placeholder='Search Movie'
                 placeholderTextColor={"lightgray"}
                 className="pb-1 pl-6 flex-1 text-base font-semibold text-white tracking-wider"
-                onChangeText={(searchText)=>changeTextHandler(searchText)}
+                onChangeText={handleTextDebounce}
             />
             <TouchableOpacity
-                onPress={()=>{navigation.goBack()}}
+                onPress={()=>{navigation.navigate("Home")}}
                 className="rounded-full p-3 m-1 bg-neutral-500"
             >
                 <XMarkIcon size="25" color="white"/>
@@ -61,7 +79,11 @@ const SearchScreen = () => {
                         <Text className="text-white font-semibold ml-1">Results ({results.length})</Text>
                         <View className="flex-row justify-between flex-wrap">
                             {
-                                results.map((item,index)=>{
+                                results.length>0 && results.map((item,index)=>{
+
+                                    const movieName = item.title;
+                                    const moviePoster = item.poster_path;
+
                                     return(
                                         <TouchableOpacity
                                             key={index}
@@ -69,7 +91,7 @@ const SearchScreen = () => {
                                         >
                                             <View className="space-y-2 mb-4">
                                                 <Image className="rounded-3xl"
-                                                    source={require('../assets/images/harrypotter.jpg')}
+                                                    source={{uri: IMAGE342(moviePoster)}}
                                                     style={{width:width*0.44, height:height*0.3}}
                                                 />
                                                 <Text className="text-neutral-300 ml-1">

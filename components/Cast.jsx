@@ -1,10 +1,8 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View,Image } from 'react-native'
 import React from 'react'
+import { IMAGE185, IMAGE500 } from '../constants';
 
 const Cast = ({cast,navigation}) => {
-
-    let personName = 'Keanu Reeves';
-    let characterName = 'John Wick';
 
   return (
     <View className='my-6'>
@@ -16,14 +14,19 @@ const Cast = ({cast,navigation}) => {
       >
         {
             cast && cast.map((person,index)=>{
+
+                let personName = person.name;
+                let characterName = person.character;
+                let characterImage = IMAGE185(person.profile_path)
+
                 return(
                     <TouchableOpacity
                         key={index}
                         className="mr-4 items-center"
-                        onPress={()=>navigation.push('Person',person)}
+                        onPress={()=>navigation.navigate('Person',person)}
                     >
                         <View className="overflow-hidden rounded-full h-20 w-20 items-center border border-neutral-500">
-                            <Image className="rounded-2xl h-24 w-20" source={require('../assets/images/KeanuReeves.jpg')}/>
+                            <Image className="rounded-2xl h-24 w-20" source={{uri:characterImage}}/>
                         </View>
                         <Text className="text-white text-xs mt-1">
                             {

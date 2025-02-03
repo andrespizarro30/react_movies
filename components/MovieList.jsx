@@ -29,7 +29,7 @@ const MovieList = ({title,data, hideSeeAll}) => {
         contentContainerStyle={{paddingHorizontal:15}}
       >
         {
-            data.map((item,index)=>{
+            data && data.map((item,index)=>{
 
                 let movieName = item.title;
                 let posterImage = IMAGE185(item.poster_path)
@@ -39,7 +39,7 @@ const MovieList = ({title,data, hideSeeAll}) => {
                         key={index}
                         onPress={()=>{
                             console.log("pressed",item);
-                            navigation.navigate('Movie', item);
+                            navigation.push('Movie', item);
                         }}
                     >
                         <View className="space-y-1 mr-4" style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginHorizontal: 15, marginVertical: 15  }}>

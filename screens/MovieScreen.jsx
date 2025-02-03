@@ -9,6 +9,7 @@ import Cast from '../components/Cast';
 import MovieList from '../components/MovieList';
 import Loading from '../components/Loading';
 import { IMAGE500 } from '../constants';
+import { fetchMovieCredits, fetchMovieDetails, fetchMovieSimilars } from '../api/moviedb';
 
 const ios = Platform.OS == 'ios';
 const topMargin = ios ? '' : 'mt-12';
@@ -21,20 +22,39 @@ const MovieScreen = () => {
     const {params: item} = useRoute();
     const [isFavorite, setIsFavorite] = useState(false)
     const navigation = useNavigation();
-    useEffect(()=>{
-        console.log(item.id);
-    },[])
 
-    //console("MOVIE SCREEN", item);
-
-    let movieName = item.original_title;
-    let moviePoster = IMAGE500(item.poster_path);
-    let movieOverview = item.overview;
-
-    const [cast, setCast] = useState([1,2,3,4,5,6,7,8,9,10])
-    const [similarMovies, setSimilarMovies] = useState([1,2,3,4,5,6])
+    const [details, setDetails] = useState({})
+    const [cast, setCast] = useState([])
+    const [similarMovies, setSimilarMovies] = useState([])
 
     const [loading, setLoading] = useState(false)
+
+    useEffect(()=>{
+        setLoading(true);
+        getDetailMovies();
+        getCreditMovies();
+        getSimilarMovies();
+      },[])
+
+      const getDetailMovies = async ()=>{
+        const data = await fetchMovieDetails(item.id);
+        if(data && data) setDetails(data);
+        setLoading(false);
+      }
+    
+      const getCreditMovies = async ()=>{
+        const data = await fetchMovieCredits(item.id);
+        //console.log("CREDITS");
+        // console.log(data.cast);
+        if(data && data.cast) setCast(data.cast);
+      }
+    
+      const getSimilarMovies = async ()=>{
+        const data = await fetchMovieSimilars(item.id);
+        // console.log("SIMILAR");
+        // console.log(data.results);
+        if(data && data.results) setSimilarMovies(data.results);
+      }
 
   return (
     <ScrollView
@@ -43,7 +63,7 @@ const MovieScreen = () => {
     >
         <View className={`w-full`}>
             <SafeAreaView pointerEvents="box-none" className={`${topMargin} ${leftMargin} absolute z-20 w-full flex-row justify-between items-center px-4`}>
-                <TouchableOpacity style={styles.background} className="rounded-xl p-1" onPress={()=>navigation.goBack()}>
+                <TouchableOpacity style={styles.background} className="rounded-xl p-1" onPress={()=>navigation.navigate("Home")}>
                     <ChevronLeftIcon size="28" strokeWidth={2.5} color="white"/>
                 </TouchableOpacity >
                 <TouchableOpacity  className={`rounded-xl p-1 ${rightMargin}`} onPress={()=>setIsFavorite(!isFavorite)}>
@@ -56,7 +76,7 @@ const MovieScreen = () => {
                 ):(
                     <View>
                         <Image
-                            source={{uri: moviePoster}}
+                            source={{uri: IMAGE500(details.poster_path)}}
                             style={{width: width, height: height*0.6}}
                         />
                         <LinearGradient
@@ -72,30 +92,31 @@ const MovieScreen = () => {
         </View>
         <View style={{marginTop: -(height*0.09)}} className="">
             <Text className="text-white text-center text-3xl font-bold tracking-wider">
-                {movieName}
+                {details?.title}
             </Text>
             <Text className="text-neutral-400 font-semibold text-base text-center">
-                Release * {item.release_date} * 170 min
+                {details?.status} • {details?.release_date?.split("-")[0]} • {details?.runtime} min
             </Text>
             <View className="flex-row justify-center mx-4 space-x-2">
-                <Text className="text-neutral-400 font-semibold text-base text-center">
-                    Action * 
-                </Text>
-                <Text className="text-neutral-400 font-semibold text-base text-center">
-                    Thrill * 
-                </Text>
-                <Text className="text-neutral-400 font-semibold text-base text-center">
-                    Comedy
-                </Text>
+                {
+                    details.genres && details.genres.map((genre,index)=>{
+                        let showDot = index+1 != details.genres.length;
+                        return(
+                            <Text key={index} className="text-neutral-400 font-semibold text-base text-center">
+                                {genre.name} {showDot ? "• " : ""}
+                            </Text>
+                        )
+                    })
+                }
             </View>
             <Text className="text-neutral-400 mx-4 tracking-wide">
-                {movieOverview}
+                {details.overview}
             </Text>
         </View>
 
-        <Cast cast={cast} navigation={navigation}/>
+        {cast.length>0 && <Cast cast={cast} navigation={navigation}/>}
 
-        {/* <MovieList title={"Similar Movies"} data={similarMovies} hideSeeAll={true}/> */}
+        {similarMovies.length>0 && <MovieList title={"Similar Movies"} data={similarMovies} hideSeeAll={true}/>}
 
     </ScrollView>
   )
